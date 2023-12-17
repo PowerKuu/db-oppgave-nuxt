@@ -70,6 +70,7 @@ const data = computed<TableData>(() => ({
                 type: "IconButton",
                 
                 click: () => {
+                    editingCompanyID.value = value.id
                     toggleCompanyPopup(true)
                 }
             },
@@ -94,6 +95,7 @@ const data = computed<TableData>(() => ({
 
 const showCompanyPopup = ref(false)
 const editMode = ref(false)
+const editingCompanyID = ref<number | null>(null)
 
 function toggleCompanyPopup(newEditMode = false) {
     editMode.value = newEditMode
@@ -113,7 +115,27 @@ async function removeCompany(companyID: number) {
     await getCompanies()
 }
 
+async function editCompany() {
+
+    console.log(editingCompanyID.value)
+    if (editingCompanyID.value == null) return
+
+    await serverFunction("companyEdit", {
+        token: user.value!.token,
+        companyID: editingCompanyID.value,
+
+        company: {
+            name: companyName.value
+        }
+    })
+
+    await getCompanies()
+
+    toggleCompanyPopup()
+}
+
 async function createCompany() {
+    console.log(editingCompanyID.value)
     await serverFunction("companyCreate", {
         token: user.value!.token,
 
@@ -125,6 +147,11 @@ async function createCompany() {
     await getCompanies()
 
     toggleCompanyPopup()
+}
+
+function confirmPopup() {
+    if (editMode.value) editCompany()
+    else createCompany()
 }
 
 const companyName = ref("")
@@ -139,7 +166,7 @@ await getCompanies()
                 <p>Name</p>
                 <input v-model="companyName" placeholder="Name"/>
             </Flex>
-            <Button @click="createCompany" icon="/icons/arrow_right.svg" theme="fill">Confirm</Button>
+            <Button @click="confirmPopup" icon="/icons/arrow_right.svg" theme="fill">Confirm</Button>
         </Flex> 
     </Popup>
 
