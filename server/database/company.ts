@@ -1,5 +1,50 @@
 import { prisma } from "../server"
 
+export async function companyGet(data: {token: string, companyID: number}) {
+    const user = await prisma.user.findUnique({
+        where: {
+            token: data.token,
+
+            OR: [
+                {
+                    admin: true
+                },
+
+                {
+                    managingPlatoons: {
+                        some: {
+                            companyId: data.companyID
+                        }
+                    }
+                }
+            ]
+        }
+    })
+
+    if (!user) return 401
+
+    const company = await prisma.company.findUnique({
+        where: {
+            id: data.companyID
+        },
+
+        include: {
+            usersHistory: {
+                select: {
+                    id: true,
+                    email: true,
+                    name: true,
+                    birthdate: true
+                }
+            }
+        }
+    })
+
+    if (!company) return 404
+
+    return company
+}
+
 export async function companyCreate(data: {
     token: string, 
     company: {
@@ -83,20 +128,11 @@ export async function companiesGetManaging(data: {token: string}) {
 
     if (!user) return 401
 
-
-    console.log(user)
-
     const companies = await prisma.company.findMany({
         where: {
             platoons: user.admin ? {} : {
                 some: {
                     managers: {
-                        some: {
-                            id: user.id
-                        }
-                    },
-
-                    users: {
                         some: {
                             id: user.id
                         }
@@ -109,8 +145,6 @@ export async function companiesGetManaging(data: {token: string}) {
             platoons: true
         }
     })
-
-    console.log(companies)
 
     return companies
 }

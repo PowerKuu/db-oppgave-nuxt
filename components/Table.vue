@@ -21,6 +21,7 @@ export type Cell = {
 } | {
     type: "IconButton"
     value: string
+    disabled?: boolean
     click: () => void
 })
 
@@ -157,7 +158,7 @@ function checkClick(event: Event, callback: () => void) {
                     <p>{{ cell.value ? "True" : "False" }}</p>
                 </Flex>
 
-                <IconButton :icon="cell.value" @click="cell.click" v-else-if="cell.type == 'IconButton'" theme="nofill"></IconButton>
+                <IconButton class="button" :data-disabled="cell.disabled" :icon="cell.value" @click="() => { cell.disabled ? null : cell.click() }" v-else-if="cell.type == 'IconButton'" theme="nofill"></IconButton>
             </Flex>
         </Flex>
     </Flex>
@@ -221,25 +222,9 @@ function checkClick(event: Event, callback: () => void) {
     margin-left: auto;
 }
 
-.iconButton {
-    background-color: var(--primary);
-    border-radius: 5px;
-
-    min-width: 1.7rem;
-    min-height: 1.7rem;
-
-    cursor: pointer;
-    transition: opacity 0.2s;
-}
-
-.iconButton:hover {
-    opacity: 0.8;
-}
-
-.iconButton img {
-    width: 0.9rem;
-    height: 0.9rem;
-    filter: invert(1);
+.button[data-disabled="true"] {
+    opacity: 0.25;
+    cursor: not-allowed;
 }
 
 .h7 {

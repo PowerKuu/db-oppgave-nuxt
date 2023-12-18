@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import type { TableData } from "@/components/Table.vue"
-import type { Company, User } from "@prisma/client";
 
 const router = useRouter()
-const user = useJsonStorage<User | null>("user", null)
+const user = await useAndVerifyLogin()
 
 if (user.value == null) {
     await navigateTo("/login")
@@ -68,8 +67,11 @@ const data = computed<TableData>(() => ({
                 id: "edit",
                 value: "/icons/edit.svg",
                 type: "IconButton",
+                disabled: !(user.value!.admin),
                 
                 click: () => {
+                    companyName.value = value.name
+
                     editingCompanyID.value = value.id
                     toggleCompanyPopup(true)
                 }
@@ -79,6 +81,7 @@ const data = computed<TableData>(() => ({
                 id: "remove",
                 value: "/icons/delete.svg",
                 type: "IconButton",
+                disabled: !(user.value!.admin),
                 
                 click: () => {
                     removeCompany(value.id)
@@ -98,6 +101,10 @@ const editMode = ref(false)
 const editingCompanyID = ref<number | null>(null)
 
 function toggleCompanyPopup(newEditMode = false) {
+    if (!newEditMode) {
+        companyName.value = ""
+    }
+
     editMode.value = newEditMode
     showCompanyPopup.value = !showCompanyPopup.value
 }
@@ -174,6 +181,9 @@ await getCompanies()
 
     <PageActions>
         <IconButton @click="logout" theme="rednofill" icon="/icons/logout.svg"/>
+        <NuxtLink href="/platoon">
+            <IconButton theme="fill" icon="/icons/user.svg" />
+        </NuxtLink>
         <IconButton @click="toggleCompanyPopup()" theme="fill" icon="/icons/plus.svg"/>
     </PageActions>
 </template>

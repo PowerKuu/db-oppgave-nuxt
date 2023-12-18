@@ -1,3 +1,4 @@
+import { Platoon } from "@prisma/client"
 import { prisma } from "../server"
 import crypto from "crypto"
 
@@ -7,6 +8,9 @@ export async function platoonCreate(data: {
         
     platoon: {
         name: string
+    
+        managers: string[]
+        users: string[]
     }
 }) {
     const user = await prisma.user.findUnique({
@@ -22,11 +26,15 @@ export async function platoonCreate(data: {
     const platoon = await prisma.platoon.create({
         data: {
             name: data.platoon.name,
-            company: {
-                connect: {
-                    id: data.companyID
-                }
-            }
+            companyId: data.companyID,
+
+            users: {
+                connect: data.platoon.users.map(email => ({ email: email }))
+            },
+
+            managers: {
+                connect: data.platoon.managers.map(email => ({ email: email }))
+            },
         }
     })
 
@@ -93,11 +101,11 @@ export async function platoonEdit(data: {
             name: data.platoon.name,
 
             managers: {
-                connect: data.platoon.managers.map(email => ({ email: email }))
+                set: data.platoon.managers.map(email => ({ email: email }))
             },
-
+            
             users: {
-                connect: data.platoon.users.map(email => ({ email: email }))
+                set: data.platoon.users.map(email => ({ email: email }))
             }
         }
     })
@@ -215,9 +223,7 @@ export async function platoonGetCensored(data: {
         }
     })
 
-    if (!platoon) return {
-    status: 404
-}
+    if (!platoon) return 404
 
     platoon.inviteCode = ""
 
@@ -251,6 +257,7 @@ export async function platoonsGetMangingOnCompany(data: {
                 select: {
                     id: true,
                     name: true,
+                    email: true,
                     birthdate: true
                 }
             },
@@ -259,6 +266,7 @@ export async function platoonsGetMangingOnCompany(data: {
                 select: {
                     id: true,
                     name: true,
+                    email: true,
                     birthdate: true
                 }
             },
@@ -268,3 +276,26 @@ export async function platoonsGetMangingOnCompany(data: {
     return platoons
 }
 
+export async function platoonGetAvailible(data: {
+    token: string
+}) {
+    const user = await prisma.user.findUnique({
+        where: {
+            token: data.token
+        },
+
+        include: {
+            managingPlatoons: true
+        }
+    })
+
+    if (!user) return 401
+
+    if (user.platoonId) return user.platoonId
+
+    const firstPlatoon = user.managingPlatoons[0]
+    
+    if (!firstPlatoon) return 404
+
+    return firstPlatoon.id
+}   

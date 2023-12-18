@@ -1,96 +1,193 @@
 <script setup lang="ts">
 import type { TableData } from "@/components/Table.vue"
 import type { SelectOption } from "@/components/MultiSelector.vue"
-import type { User } from "@prisma/client";
 
 const router = useRouter()
-const user = useJsonStorage<User | null>("user", null)
+const user = await useAndVerifyLogin()
+
+const route = useRoute()
+const companyID = Number(route.params.company as string)
 
 if (user.value == null) {
     await navigateTo("/login")
 }
 
+const platoons = ref<NoServerFunctionErrors<ServerFunctionResult<"platoonsGetMangingOnCompany">>>([])
 
+async function getMangingPlatoons() {
+    const data = await serverFunction("platoonsGetMangingOnCompany", {
+        token: user.value!.token,
+        companyID: companyID
+    })
+
+    if (isServerError(data)) return
+
+    platoons.value = data
+}
+
+async function getUsersOnCompany() {
+    const data = await serverFunction("companyGet", {
+        token: user.value!.token,
+        companyID: companyID
+    })
+
+
+    if (isServerError(data)) return
+
+    userSelectorOptions.value = data.usersHistory.map((value) => ({
+        label: value.email,
+        value: value.email
+    }))
+}
 
 const tableData = computed<TableData>(() => {
     return {
-    head: [
-        {
-            id: "platoon",
-            name: "Platoon"
-        },
+        head: [
+            {
+                id: "platoon",
+                name: "Platoon"
+            },
 
-        {
-            id: "invite",
-            name: "Invite"
-        },
+            {
+                id: "invite",
+                name: "Invite"
+            },
 
-        {
-            id: "edit",
-            name: "Edit",
-            space: true
-        },
+            {
+                id: "edit",
+                name: "Edit",
+                space: true
+            },
 
-        {
-            id: "remove",
-            name: "Remove",
-            space: true
-        }
-    ],
+            {
+                id: "remove",
+                name: "Remove",
+                space: true
+            }
+        ],
 
-    rows: [
-        {
-            cells: [
-                {
-                    id: "platoon",
-                    value: "Platoon 1",
-                    type: "String"
-                },
+        rows: platoons.value.map((value) => ({
+                cells: [
+                    {
+                        id: "platoon",
+                        value: value.name,
+                        type: "String"
+                    },
 
-                {
-                    id: "invite",
-                    value: "/icons/qrcode.svg",
-                    type: "IconButton",
-                    
-                    click: () => {
-                        toggleInvitePopup()
+                    {
+                        id: "invite",
+                        value: "/icons/qrcode.svg",
+                        type: "IconButton",
+                        
+                        click: () => {
+                            editingPlatoonID.value = value.id
+
+                            inviteCode.value = value.inviteCode
+                            toggleInvitePopup()
+                        }
+                    },
+
+                    {
+                        id: "edit",
+                        value: "/icons/edit.svg",
+                        type: "IconButton",
+                        
+                        click: () => {
+                            platoonName.value = value.name
+
+                            platoonUserMails.value = value.users.map((value) => ({
+                                label: value.email,
+                                value: value.email
+                            }))
+
+                            platoonManagerMails.value = value.managers.map((value) => ({
+                                label: value.email,
+                                value: value.email
+                            }))
+
+                            editingPlatoonID.value = value.id
+                            togglePlatoonPopup(true)
+                        }
+                    },
+
+                    {
+                        id: "remove",
+                        value: "/icons/delete.svg",
+                        type: "IconButton",
+                        click: () => {
+                            removePlatoon(value.id)
+                        }
                     }
-                },
+                ],
 
-                {
-                    id: "edit",
-                    value: "/icons/edit.svg",
-                    type: "IconButton",
-                    
-                    click: () => {
-                        togglePlatoonPopup(true)
-                    }
-                },
-
-                {
-                    id: "remove",
-                    value: "/icons/delete.svg",
-                    type: "IconButton",
-                    click: () => {
-                        removePlatoon()
-                    }
-                }
-            ],
-
-            click: () => router.push("/platoon/1")
-        },
-    ]
-}
+                click: () => router.push(`/platoon/${value.id}`)
+            })
+        )
+    }
 })
 
-function removePlatoon() {
+async function removePlatoon(platoonID: number) {
     const confirm = window.confirm("Are you sure you want to remove this platoon?")
     if (!confirm) return
 
-    console.log("Remove platoon")
+    await serverFunction("platoonDelete", {
+        token: user.value!.token,
+        platoonID: platoonID
+    })
+
+    await getMangingPlatoons()
+}
+
+async function createPlatoon() {
+    await serverFunction("platoonCreate", {
+        token: user.value!.token,
+        companyID: companyID,
+        platoon: {
+            name: platoonName.value,
+            
+            users: platoonUserMails.value.map((value) => value.value),
+            managers: platoonManagerMails.value.map((value) => value.value)
+        }
+    })
+
+    await getMangingPlatoons()
+
+    togglePlatoonPopup()
+}
+
+async function editPlatoon() {
+    if (editingPlatoonID.value == null) return
+
+    await serverFunction("platoonEdit", {
+        token: user.value!.token,
+        platoonID: editingPlatoonID.value,
+
+        platoon: {
+            name: platoonName.value,
+            users: platoonUserMails.value.map((value) => value.value),
+            managers: platoonManagerMails.value.map((value) => value.value)
+        }
+    })
+
+    await getMangingPlatoons()
+
+    togglePlatoonPopup()
+}
+
+async function regenerateInviteUrl() {
+    const platoon = await serverFunction("platoonRegenerateInvite", {
+        token: user.value!.token,
+        platoonID: editingPlatoonID.value!
+    })
+
+    if (isServerError(platoon)) return
+
+    inviteCode.value = platoon.inviteCode
 }
 
 const editMode = ref(false)
+const editingPlatoonID = ref<number | null>(null)
+
 const showPlatoonPopup = ref(false)
 
 const showInvitePopup = ref(false)
@@ -99,10 +196,17 @@ function toggleInvitePopup() {
     showInvitePopup.value = !showInvitePopup.value
 }
 
-const inviteCode = ref("test")
+const inviteCode = ref("")
 
-function togglePlatoonPopup(newEditMode = false) {
+function togglePlatoonPopup(newEditMode = false) {    
+    if (!newEditMode) {
+        platoonName.value = ""
+        platoonUserMails.value = []
+        platoonManagerMails.value = []
+    }
+
     editMode.value = newEditMode
+
     showPlatoonPopup.value = !showPlatoonPopup.value
 }
 
@@ -111,22 +215,26 @@ const platoonName = ref("")
 const platoonUserMails = ref<SelectOption[]>([])
 const platoonManagerMails = ref<SelectOption[]>([])
 
-const userSelectorOptions = ref<SelectOption[]>([
-    {
-        label: "hkleven6@gmail.com",
-        value:"123"
-    }
-])
+const userSelectorOptions = ref<SelectOption[]>([])
 
-const qrcodeUrl = computed(() => {
-    const toUrl = `${window.location.origin}/login?invite=${inviteCode.value}`
-    return `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURI(toUrl)}`
+const inviteUrl = computed(() => {
+    return `${window.location.origin}/login?invite=${inviteCode.value}`
 })
 
+const qrcodeUrl = computed(() => {
+    return `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURI(inviteUrl.value)}`
+})
 
+function confirmPopup() {
+    if (editMode.value) {
+        editPlatoon()
+    } else {
+        createPlatoon()
+    }
+}
 
-
-
+await getMangingPlatoons()
+await getUsersOnCompany()
 </script>
 
 <template>
@@ -149,15 +257,15 @@ const qrcodeUrl = computed(() => {
                 <MultiSelector v-model:selected="platoonManagerMails" :options="userSelectorOptions"/>
             </Flex>
 
-            <Button icon="/icons/arrow_right.svg" theme="fill">Confirm</Button>
+            <Button @click="confirmPopup" icon="/icons/arrow_right.svg" theme="fill">Confirm</Button>
         </Flex>
     </Popup>
 
     <Popup v-if="showInvitePopup" @close="toggleInvitePopup" header="Invite">
         <Flex direction="column" gap="1rem">
             <Flex direction="column" gap="0.25rem">
-                <p>Code</p>
-                <TokenInput :token="inviteCode" :showRegenerate="true" :censor="true"/>
+                <p>Link</p>
+                <TokenInput @regenerate="regenerateInviteUrl" :token="inviteUrl" :showRegenerate="true" :censor="true"/>
             </Flex>
             
             <Flex direction="column" gap="0.25rem">

@@ -15,13 +15,14 @@ const invite = route.query.invite as string
 
 const registerMode = ref(false)
 
-const userStore = useJsonStorage<User | null>("user", null)
+const userStore = await useAndVerifyLogin()
 
-if (userStore.value != null) {
-    const newUser = await serverFunction("userVerify", userStore.value.token)
-
-    if (isServerError(newUser)) userStore.value = null
-    else done(newUser)
+if (userStore.value) {
+    if (userStore.value.admin == true) {
+        await navigateTo("/admin")
+    } else {
+        await navigateTo("/platoon")
+    }
 }
 
 

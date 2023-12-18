@@ -1,4 +1,5 @@
 import type { FunctionNames, Functions } from "@/server/server"
+import type { User } from "@prisma/client"
 
 export type ServerFunctionResult<T extends FunctionNames> = Awaited<ReturnType<Functions[T]>> | number
 export type NoServerFunctionErrors<T> = T extends number ? never : T
@@ -25,6 +26,23 @@ export async function serverFunction<T extends FunctionNames>(operation: T, data
 export function isServerError<T>(data: T | number): data is number {
     return typeof data === "number"
 }
+
+export async function useAndVerifyLogin() {
+    const userStore = useJsonStorage<User | null>("user", null)
+
+    if (!userStore.value) return userStore
+
+    const newUser = await serverFunction("userVerify", userStore.value.token)
+
+    if (isServerError(newUser)) {
+        userStore.value = null
+    } else {
+        userStore.value = newUser
+    }
+
+    return userStore
+}
+    
 
 const recomputer = ref(0)
 
