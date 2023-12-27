@@ -7,12 +7,15 @@ if (user.value == null) {
     await navigateTo("/login")
 }
 
-const id = serverFunction("platoonGetAvailible", {
+const availible = await serverFunction("platoonGetAvailible", {
     token: user.value!.token
 })
 
-if (isServerError(id)) alert("You are not in any platoon. Please contact your platoon leader to get an invite code.")
-else navigateTo(`/platoon/${id}`)
+if (isServerError(availible)) { 
+    alert("You are not in any platoon. Please contact your platoon leader to get an invite code.") 
+    await navigateTo("/admin")
+}
+else navigateTo(`/platoon/${availible.id}`)
 </script>
 
 <template>

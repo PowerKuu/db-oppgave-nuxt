@@ -46,5 +46,5 @@ model User {
   managingPlatoons Platoon[] @relation("Manager")
   companiesHistory Company[]
 
-  admin Boolean @default(true)
+  admin Boolean @default(false)
 }

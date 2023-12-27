@@ -265,7 +265,7 @@ await getUsersOnCompany()
         <Flex direction="column" gap="1rem">
             <Flex direction="column" gap="0.25rem">
                 <p>Link</p>
-                <TokenInput @regenerate="regenerateInviteUrl" :token="inviteUrl" :showRegenerate="true" :censor="true"/>
+                <TokenInput @regenerate="regenerateInviteUrl" :token="inviteUrl" :showRegenerate="true" :censor="false"/>
             </Flex>
             
             <Flex direction="column" gap="0.25rem">

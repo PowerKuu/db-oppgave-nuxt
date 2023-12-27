@@ -17,13 +17,7 @@ const registerMode = ref(false)
 
 const userStore = await useAndVerifyLogin()
 
-if (userStore.value) {
-    if (userStore.value.admin == true) {
-        await navigateTo("/admin")
-    } else {
-        await navigateTo("/platoon")
-    }
-}
+if (userStore.value) done(userStore.value)
 
 
 async function done(user: User) {

@@ -119,13 +119,3 @@ export async function userJoinPlatoon(data:{
 
     return user
 }
-
-export function promp(promp: {
-    erik: string
-    leo: string
-}) {
-    return {
-        erik: "text",
-        erik2: "lol"
-    }
-}

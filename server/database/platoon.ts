@@ -291,11 +291,15 @@ export async function platoonGetAvailible(data: {
 
     if (!user) return 401
 
-    if (user.platoonId) return user.platoonId
+    if (user.platoonId) return {
+        id: user.platoonId
+    }
 
     const firstPlatoon = user.managingPlatoons[0]
     
     if (!firstPlatoon) return 404
 
-    return firstPlatoon.id
+    return {
+        id: firstPlatoon.id
+    }
 }   
