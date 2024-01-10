@@ -193,10 +193,16 @@ export async function platoonGetCensored(data: {
                     }
                 }
             ]
+        },
+
+        include: {
+            managingPlatoons: true
         }
     })
 
     if (!user) return 401
+
+    const isManager = user.admin || user.managingPlatoons.some(platoon => platoon.id === data.platoonID)
 
     const platoon = await prisma.platoon.findUnique({
         where: {
@@ -209,13 +215,16 @@ export async function platoonGetCensored(data: {
             managers: {
                 select: {
                     email: true,
+                    phone: true,
                     name: true,
                     birthdate: true
                 }
             },
+            
             users: {
                 select: {
-                    email: true,
+                    email: isManager ? true : false,
+                    phone: isManager ? true : false,
                     name: true,
                     birthdate: true
                 }

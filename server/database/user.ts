@@ -39,6 +39,8 @@ export async function userCreate(user: {
 
     name: string,
     birthdate: string
+
+    phone: string
 }) {
     const sha256 = crypto.createHash("sha256")
 
@@ -48,7 +50,8 @@ export async function userCreate(user: {
             email: user.email,
 
             name: user.name,
-            birthdate: user.birthdate
+            birthdate: user.birthdate,
+            phone: user.phone
         }
     })
 }
@@ -60,6 +63,7 @@ export async function userEdit(data: {
     user: {
         name: string,
         birthdate: string
+        phone: string
     }
 }) {
     return await prisma.user.update({
@@ -69,7 +73,8 @@ export async function userEdit(data: {
 
         data: {
             name: data.user.name,
-            birthdate: data.user.birthdate
+            birthdate: data.user.birthdate,
+            phone: data.user.phone
         }
     })
 }

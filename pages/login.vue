@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import type { User } from "@prisma/client"
-import { useStorage } from "@vueuse/core"
-
 
 const email = ref("")
 const password = ref("")
 
 const fullName = ref("")
 const birthDate = ref("")
+const phoneNumber = ref("")
 
 const route = useRoute()
 
@@ -70,7 +69,8 @@ async function register() {
         email: email.value,
         password: password.value,
         name: fullName.value,
-        birthdate: birthDate.value
+        birthdate: birthDate.value,
+        phone: phoneNumber.value
     })
 
     if (isServerError(user)) {
@@ -104,6 +104,11 @@ async function register() {
             <Flex direction="column" gap="0.25rem">
                 <p>Full name</p>
                 <input v-model="fullName" type="text" placeholder="Full name"/>
+            </Flex>
+
+            <Flex direction="column" gap="0.25rem">
+                <p>Phone number</p>
+                <input v-model="phoneNumber" type="text" placeholder="Phone number"/>
             </Flex>
 
             <Flex direction="column" gap="0.25rem">

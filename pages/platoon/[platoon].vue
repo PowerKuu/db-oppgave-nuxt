@@ -24,7 +24,13 @@ const users = computed(() => {
         role: "manager"
     }))
 
-    return [...users, ...managers]
+    return [...users, ...managers] as {
+        email?: string
+        phone?: string
+        name: string
+        birthdate: string
+        role: "user" | "manager"
+    }[]
 })
 
 const data = computed<TableData>(() => ({
@@ -32,6 +38,11 @@ const data = computed<TableData>(() => ({
         {
             id: "email",
             name: "Email"
+        },
+
+        {
+            id: "phone",
+            name: "Phone"
         },
 
         {
@@ -53,8 +64,14 @@ const data = computed<TableData>(() => ({
     rows: users.value.map((value) => ({
         cells: [
             {
-                id: value.email,
-                value: value.email,
+                id: value.email ?? "***********",
+                value: value.email ?? "***********",
+                type: "String"
+            },
+
+            {
+                id: value.phone ?? "***********",
+                value: value.phone ?? "***********",
                 type: "String"
             },
 
@@ -94,16 +111,19 @@ async function getUsers() {
 async function editUser() {
     await serverFunction("userEdit", {
         token: user.value!.token,
+
         user: {
             birthdate: birthDate.value,
-            name: fullName.value
+            name: fullName.value,
+            phone: phoneNumber.value
         }
     })
 
     user.value = {
         ...user.value!,
         birthdate: birthDate.value,
-        name: fullName.value
+        name: fullName.value,
+        phone: phoneNumber.value
     }
 
     await getUsers()
@@ -120,6 +140,7 @@ function toogleUserPopup() {
 
 const birthDate = ref<string>(user.value!.birthdate)
 const fullName = ref(user.value!.name)
+const phoneNumber = ref(user.value!.phone)
 
 await getUsers()
 </script>
@@ -130,6 +151,11 @@ await getUsers()
             <Flex direction="column" gap="0.25rem">
                 <p>Full name</p>
                 <input v-model="fullName" placeholder="Full name" />
+            </Flex>
+
+            <Flex direction="column" gap="0.25rem">
+                <p>Phone number</p>
+                <input v-model="phoneNumber" placeholder="Phone number" />
             </Flex>
 
             <Flex direction="column" gap="0.25rem">
