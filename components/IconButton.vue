@@ -2,15 +2,16 @@
 const props = defineProps<{
     icon: string
     theme: "nofill" | "fill" | "rednofill" | "redfill"
+    disabled?: boolean
 
     imageSize?: string
 }>()
 
 const imageSizeAbs = computed(() => props.imageSize ?? "1.25rem")
 </script>
-
+    
 <template>
-    <Flex justify="center" align="center" class="button" :data-theme="theme">
+    <Flex justify="center" :disabled="disabled" align="center" class="button" :data-theme="theme">
         <img :class="theme == `rednofill` ? `red-filter` : ``" :src="icon" alt="">
     </Flex>
 </template>
@@ -30,6 +31,11 @@ const imageSizeAbs = computed(() => props.imageSize ?? "1.25rem")
     img {
         height: v-bind(imageSizeAbs);
         width: v-bind(imageSizeAbs);
+    }
+
+    &[disabled="true"] {
+        opacity: 0.5;
+        cursor: not-allowed;
     }
 
     &[data-theme="nofill"]:hover, &[data-theme="fill"] {

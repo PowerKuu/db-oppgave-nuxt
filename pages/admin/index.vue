@@ -9,7 +9,7 @@ if (user.value == null) {
 }
 
 const companies = ref<NoServerFunctionErrors<ServerFunctionResult<"companiesGetManaging">>>([])
-
+const isAdmin = computed(() => !!user.value?.admin)
 
 async function getCompanies() {
     const data = await serverFunction("companiesGetManaging", {
@@ -101,6 +101,8 @@ const editMode = ref(false)
 const editingCompanyID = ref<number | null>(null)
 
 function toggleCompanyPopup(newEditMode = false) {
+    if (!isAdmin.value) return
+
     if (!newEditMode) {
         companyName.value = ""
     }
@@ -184,7 +186,8 @@ await getCompanies()
         <NuxtLink href="/platoon">
             <IconButton theme="fill" icon="/icons/user.svg" />
         </NuxtLink>
-        <IconButton @click="toggleCompanyPopup()" theme="fill" icon="/icons/plus.svg"/>
+
+        <IconButton :disabled="!isAdmin" @click="toggleCompanyPopup()" theme="fill" icon="/icons/plus.svg"/>
     </PageActions>
 </template>
 

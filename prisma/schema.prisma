@@ -22,7 +22,7 @@ model Platoon {
   id   Int    @id @default(autoincrement())
   name String
 
-  company   Company @relation(fields: [companyId], references: [id])
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
   companyId Int
 
   users    User[]
